@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:sockets="http://www.mulesoft.org/schema/mule/sockets"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sockets http://www.mulesoft.org/schema/mule/sockets/current/mule-sockets.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1f2e9168-7177-4319-add0-641bd932b008" basePath="/rest/api">
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<flow name="dragonGet" doc:id="947d5dc7-4ce9-4e19-8f68-464dacc239a2" >
+		<http:listener doc:name="Listener" doc:id="6136e07a-beb8-4f8c-b89a-6f0dd83d5f3a" config-ref="HTTP_Listener_config" path="/dragons/{id}" allowedMethods="GET"/>
+		<http:request method="POST" doc:name="Request" doc:id="76afff24-2357-480e-a271-cd727012e92b" url="http://localhost:8080/ws">
+			<http:body ><![CDATA[#[%dw 2.0
+output text/xml
+ns soapenv http://schemas.xmlsoap.org/soap/envelope/
+ns gs http://ru/ifmo/soa/
+---
+{
+    soapenv#Envelope: {
+        soapenv#Header: {},
+        soapenv#Body: {
+            gs#getDragonRequest: {
+                id: attributes.uriParams.id
+            }
+        }
+    }
+}]]]></http:body>
+			<http:headers ><![CDATA[#[output application/xml
+---
+{
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="07f28be9-acc8-4f1f-8806-36f4e70e83b2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns SOAPENV http://schemas.xmlsoap.org/soap/envelope/
+ns ns3 http://ru/ifmo/soa/
+---
+{
+	Dragon: {
+		id: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.id,
+		name: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.name,
+		creationDate: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.creationDate,
+		"coordinates": {
+			"x": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.coordinates.x,
+			"y": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.coordinates.y
+		},
+		age: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.age,
+		color: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.color,
+		"type": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse."type",
+		character: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.character,
+		killerId: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killerId
+//		"killer": {
+//			"name": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killer.name,
+//			"height": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killer.height,
+//			"weight": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killer.weight,
+//			"passportID": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killer.passportID,
+//			"nationality": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killer.nationality
+//		}
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="personGet" doc:id="67cf1d6d-03e5-42e2-98e0-b748181afbd5" >
+		<http:listener doc:name="Listener" doc:id="5fd7b6da-d657-4519-b0a0-e2214cefd864" config-ref="HTTP_Listener_config" path="/persons/{id}" />
+		<http:request method="POST" doc:name="Request" doc:id="c0239bae-66bb-4ad2-9301-88db3d550449" url="http://localhost:8080/ws" >
+			<http:body ><![CDATA[#[%dw 2.0
+output text/xml
+ns soapenv http://schemas.xmlsoap.org/soap/envelope/
+ns gs http://ru/ifmo/soa/
+---
+{
+    soapenv#Envelope: {
+        soapenv#Header: {},
+        soapenv#Body: {
+            gs#getPersonRequest: {
+                passportID: attributes.uriParams.id
+            }
+        }
+    }
+}]]]></http:body>
+			<http:headers ><![CDATA[#[output application/xml
+---
+{
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="a2f68ef5-d3a3-4100-a2a8-331ad1ca6659" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns SOAPENV http://schemas.xmlsoap.org/soap/envelope/
+ns ns3 http://ru/ifmo/soa/
+---
+{
+	Person: {
+		name: payload.SOAPENV#Envelope.SOAPENV#Body.personResponse.name,
+		height: payload.SOAPENV#Envelope.SOAPENV#Body.personResponse.height,
+		weight: payload.SOAPENV#Envelope.SOAPENV#Body.personResponse.weight,
+		passportID: payload.SOAPENV#Envelope.SOAPENV#Body.personResponse.passportID,
+		nationality: payload.SOAPENV#Envelope.SOAPENV#Body.personResponse.nationality
+	}
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dragonUpdate" doc:id="a3b61331-544b-4643-ace0-311b2fd837de" >
+		<http:listener doc:name="Listener" doc:id="82860e9d-7d1b-49d7-8295-9e8ba4574ee3" config-ref="HTTP_Listener_config" path="/dragons/{id}" allowedMethods="PUT"/>
+		<ee:transform doc:name="Transform Message" doc:id="75a0514d-88c2-488a-b13b-f6fa9019cbef" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+read(attributes.queryParams.dragon, "application/json")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request" doc:id="a39e979d-291d-4140-8d3f-7f6cf4cf6ec4" url="http://localhost:8080/ws" >
+			<http:body ><![CDATA[#[%dw 2.0
+output text/xml
+ns soapenv http://schemas.xmlsoap.org/soap/envelope/
+ns gs http://ru/ifmo/soa/
+---
+{
+    soapenv#Envelope: {
+        soapenv#Header: {},
+        soapenv#Body: {
+            gs#updateDragonRequest: {
+                "id": attributes.uriParams.id,
+                name: payload.name,
+                killerId: payload.killerId,
+                coordinates: {
+                	x: payload.coordinates.x,
+                	y: payload.coordinates.y
+                },
+                age: payload.age,
+                color: payload.color,
+                "type": payload."type",
+                character: payload.character
+            }
+        }
+    }
+}]]]></http:body>
+			<http:headers ><![CDATA[#[output application/xml
+---
+{
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="646dd156-57e8-423a-9f75-dfdfa5d473f4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns SOAPENV http://schemas.xmlsoap.org/soap/envelope/
+ns ns3 http://ru/ifmo/soa/
+---
+{
+	Dragon: {
+		id: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.id,
+		name: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.name,
+		creationDate: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.creationDate,
+		"coordinates": {
+			"x": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.coordinates.x,
+			"y": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.coordinates.y
+		},
+		age: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.age,
+		color: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.color,
+		"type": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse."type",
+		character: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.character,
+		killerId: payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killerId
+//		"killer": {
+//			"name": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killer.name,
+//			"height": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killer.height,
+//			"weight": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killer.weight,
+//			"passportID": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killer.passportID,
+//			"nationality": payload.SOAPENV#Envelope.SOAPENV#Body.dragonResponse.killer.nationality
+//		}
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
